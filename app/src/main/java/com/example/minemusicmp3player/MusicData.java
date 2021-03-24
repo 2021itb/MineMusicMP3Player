@@ -24,6 +24,8 @@ public class MusicData {
         this.liked = liked;
     }   //매개변수 있는 생성자  전체 파라미터
 
+
+
     public String getId() {
         return id;
     }

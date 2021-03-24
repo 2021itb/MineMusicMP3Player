@@ -11,6 +11,8 @@ import android.Manifest;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.view.Gravity;
+import android.view.View;
 import android.widget.FrameLayout;
 
 import java.util.ArrayList;
@@ -22,8 +24,16 @@ public class MainActivity extends AppCompatActivity {
     private RecyclerView recyclerView;
     private RecyclerView recyclerLike;
     //musicDataArrayList
-    ArrayList<MusicData> musicDataArrayList = new ArrayList<>();
+    private ArrayList<MusicData> musicDataArrayList = new ArrayList<>();
 
+    //MusicAdapter
+    private MusicAdapter musicAdapter;
+
+
+    private Player player;
+
+    //데이타베이스 참조변수
+    private MusicDBHelper musicDBHelper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,7 +48,7 @@ public class MainActivity extends AppCompatActivity {
         requestPermissionsFunc();
 
         //어뎁터생성
-        MusicAdapter musicAdapter = new MusicAdapter(getApplicationContext());  //뮤직 어뎁터를 생성하고
+        musicAdapter = new MusicAdapter(getApplicationContext());  //뮤직 어뎁터를 생성하고
 
         //리사이클러뷰에는 리니어레이아웃메니저를 적용시켜야된다.
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(getApplicationContext());
@@ -52,12 +62,38 @@ public class MainActivity extends AppCompatActivity {
         musicAdapter.setMusicList(musicDataArrayList); //뮤직어뎁터 클래스의 뮤직리스트에다가 값을 전달달
         musicAdapter.notifyDataSetChanged();  //변화됐다고 알려주면 뿌려짐
 
+        ///////DB에 저장하는 부분//////////////////////////////////////////////////////////////
+        //데이타베이스에 저장한다.
+        musicDBHelper = MusicDBHelper.getInstance(getApplicationContext());
+
+        //리사이클러뷰에 나오는 노래를 저장한다.
+        musicDBHelper.insertMusicDataToDB(musicDataArrayList);
+        //////////////////////////////////////////////////////////////////////////////////
+        eventHandlerFunc();
+
+        //뮤직 어뎁터 속에는 셋온클릭아이템리스너가 있을 줄 알았는데 없어서
+        //인터페이스를 구현하지 못하면 리사이클러뷰의 이벤트를 걸지 못한다.
+        musicAdapter.setOnItemClickListener(new MusicAdapter.OnItemClickListener() {    //아까 만든 인터페이스의 세터스함수
+            @Override
+            public void onItemClick(View view, int position) {
+                player.setPlayerData(position, true); //플레이어의 함수에다가 포지션만 전달해주면 그 위치의 음악이 재생됨 (좋아요음악)트루와 (일반음악)폴스를 가지고 왼쪽노래냐 오른쪽 노래냐를 정한 것임
+                drawerLayout.closeDrawer(Gravity.LEFT); //이렇게 하면 왼쪽창이 닫아짐
+            }
+        });
 
         //프레그먼트 지정  프레임레이아웃에다가 내가만든 프레그먼트 지정
         //현재 액티비티에 있는 프레임레이아웃에 프레그먼트 지정
         replaceFrag();
 
     }
+
+    private void eventHandlerFunc() {
+
+
+
+    }
+
+
 
     // sdCard 안의 음악을 검색한다
     public ArrayList<MusicData> findMusic() {
@@ -110,7 +146,7 @@ public class MainActivity extends AppCompatActivity {
     //현재 액티비티에 있는 프레임레이아웃에 프레그먼트 지정
     private void replaceFrag() {   //매개변수로(int position)주면->대체할 프레그먼트가 많을 경우 이렇게 해주면 들어오는 값에 따라 화면 바꿀 수 있다.
         //프레그먼트 생성
-        Player player = new Player();   //플레이어클래스의 디폴트 생성자를 부름
+        player = new Player();   //플레이어클래스의 디폴트 생성자를 부름
 
         FragmentTransaction ft =getSupportFragmentManager().beginTransaction(); //객체 만들고
         ft.replace(R.id.frameLayout, player);   //만든 객체의 멤버함수인 리플레이스
@@ -126,4 +162,11 @@ public class MainActivity extends AppCompatActivity {
         recyclerLike = (RecyclerView) findViewById(R.id.recyclerLike);
     }
 
+    public ArrayList<MusicData> getMusicDataArrayList() {
+        return musicDataArrayList;
+    }
+
+    public MusicDBHelper getMusicDBHelper() {
+        return musicDBHelper;
+    }
 }
